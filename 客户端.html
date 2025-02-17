@@ -249,6 +249,48 @@
             }
         });
 
+// 添加状态文本元素
+const statusText = document.getElementById('statusText');
+
+// 更新状态显示
+function updateStatusUI(connected) {
+  statusText.textContent = connected ? '在线' : '离线';
+  statusText.parentElement.classList.toggle('online', connected);
+  statusText.parentElement.classList.toggle('offline', !connected);
+}
+
+// 预设按钮处理
+document.querySelectorAll('.preset').forEach(button => {
+  button.addEventListener('click', async () => {
+    const intensity = button.dataset.intensity;
+    intensitySlider.value = intensity;
+    intensityValue.textContent = intensity;
+    
+    if (!powerSwitch.checked) {
+      powerSwitch.checked = true;
+      await sendControlCommand({ power: true, intensity });
+    } else {
+      await sendControlCommand({ power: true, intensity });
+    }
+  });
+});
+
+// 增强连接检查
+async function checkConnection() {
+  try {
+    const response = await fetch(`${API_ENDPOINT}/status`);
+    const data = await response.json();
+    updateConnectionStatus(response.ok && data.connected);
+    updateStatusUI(data.connected);
+  } catch {
+    updateConnectionStatus(false);
+    updateStatusUI(false);
+  }
+}
+
+        // 初始化定时检查
+        setInterval(checkConnection, 3000);
+        checkConnection();
         // 初始化连接检查
         setInterval(async () => {
             try {
