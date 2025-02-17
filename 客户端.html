@@ -125,6 +125,43 @@
             background: #7fff7f;
             box-shadow: 0 0 8px #7fff7f;
         }
+        .preset-buttons {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.preset {
+  background: var(--secondary-color);
+  border: none;
+  padding: 0.8rem;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.preset:hover {
+  transform: translateY(-2px);
+}
+
+.connection-status {
+  margin-bottom: 1rem;
+  color: #666;
+}
+
+#statusText::before {
+  content: "●";
+  margin-right: 5px;
+}
+
+.offline #statusText::before {
+  color: #ff4444;
+}
+
+.online #statusText::before {
+  color: #00C851;
+}
     </style>
 </head>
 <body>
