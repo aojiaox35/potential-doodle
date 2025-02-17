@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能设备远程控制</title>
+    <style>
+        :root {
+            --primary-color: #ff69b4;
+            --secondary-color: #ff99cc;
+            --background: linear-gradient(135deg, #fff5f5 0%, #ffe6f0 100%);
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--background);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .power-switch {
+            position: relative;
+            display: inline-block;
+            width: 80px;
+            height: 40px;
+            margin-bottom: 2rem;
+        }
+
+        .power-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 32px;
+            width: 32px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(40px);
+        }
+
+        .intensity-control {
+            margin: 2rem 0;
+        }
+
+        .intensity-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+        }
+
+        .intensity-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .intensity-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            margin-left: 8px;
+        }
+
+        .connected .status-indicator {
+            background: #7fff7f;
+            box-shadow: 0 0 8px #7fff7f;
+        }
+    </style>
+</head>
+<body>
+    <div class="control-panel">
+        <h1>智能设备控制 <span class="status-indicator"></span></h1>
+        
+        <label class="power-switch">
+            <input type="checkbox" id="powerSwitch">
+            <span class="slider"></span>
+        </label>
+
+        <div class="intensity-control">
+            <label for="intensity">强度调节: <output id="intensityValue">0</output>%</label>
+            <input type="range" id="intensity" class="intensity-slider" 
+                   min="0" max="100" value="0" step="1">
+        </div>
+    </div>
+
+    <script>
+        // 设备控制逻辑
+        const API_ENDPOINT = 'https://your-api-endpoint.com/control';
+        let isConnected = false;
+
+        // DOM元素
+        const powerSwitch = document.getElementById('powerSwitch');
+        const intensitySlider = document.getElementById('intensity');
+        const intensityValue = document.getElementById('intensityValue');
+        const statusIndicator = document.querySelector('.status-indicator');
+
+        // 更新连接状态显示
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            statusIndicator.classList.toggle('connected', connected);
+        }
+
+        // 发送控制指令
+        async function sendControlCommand(data) {
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                updateConnectionStatus(response.ok);
+                return response.ok;
+            } catch (error) {
+                console.error('控制指令发送失败:', error);
+                updateConnectionStatus(false);
+                return false;
+            }
+        }
+
+        // 事件监听
+        powerSwitch.addEventListener('change', async () => {
+            const command = {
+                power: powerSwitch.checked ? 'on' : 'off',
+                intensity: intensitySlider.value
+            };
+
+            if (!await sendControlCommand(command)) {
+                powerSwitch.checked = !powerSwitch.checked;
+            }
+        });
+
+        intensitySlider.addEventListener('input', async (e) => {
+            intensityValue.textContent = e.target.value;
+            if (powerSwitch.checked) {
+                await sendControlCommand({
+                    power: 'on',
+                    intensity: e.target.value
+                });
+            }
+        });
+
+        // 初始化连接检查
+        setInterval(async () => {
+            try {
+                const response = await fetch(`${API_ENDPOINT}/status`);
+                updateConnectionStatus(response.ok);
+            } catch {
+                updateConnectionStatus(false);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
